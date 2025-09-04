@@ -1,62 +1,77 @@
 package controleur;
 
-import modele.Coup;
-import modele.Joueur;
-import modele.Tas;
+import modele.*;
 import vue.Ihm;
+
+import java.util.Random;
+import java.util.concurrent.ScheduledFuture;
 
 public class ControleurJeu {
 
     private Ihm ihm;
-    private Joueur j1;
-    private Joueur j2;
+    private IJoueur j1;
+    private IJoueur j2;
+    private IJoueur[] IJoueurs = new IJoueur[2];
+    int indiceJoueur = 0;
     private Tas tas;
 
 
-    private Joueur dernierJoueurAyantJoue;
+
+    private IJoueur dernierIJoueurAyantJoue;
 
     public ControleurJeu(Ihm ihm) {
+        Random rand = new Random();
+
         this.ihm = ihm;
-        this.j1 = this.ihm.demandeJoueurNom(1);
-        this.j2 = this.ihm.demandeJoueurNom(2);
+        boolean jouerContreIA = this.ihm.choixJouerContreIA();
+
+
+        this.IJoueurs[0] = this.ihm.demandeJoueurNom(1, ihm);
+
+        if(jouerContreIA) {
+            this.IJoueurs[1] = new IA("IA", ihm);
+        }
+        else {
+            this.IJoueurs[1] = this.ihm.demandeJoueurNom(2, ihm);
+        }
+
         this.tas = this.ihm.demandeNbTas();
     }
 
-    public Ihm getIhm() {
-        return this.ihm;
-    }
-
     public void jouer() {
-        this.dernierJoueurAyantJoue = j1;
-        int alumetteenlever;
-        int ligne;
+        indiceJoueur = 1;
+
+        for(IJoueur joueur : IJoueurs){
+            joueur.initStrategie();
+        }
 
         while (this.tas.resteAlumette()) {
+            indiceJoueur = indiceJoueur == 0 ? 1:0;
             this.ihm.sendTasString(this.tas);
-            while(!coupProcess(this.ihm.demandeCoup(getNextJoueurToPlay()))){
-                this.ihm.coupInvalideNotif();
-                getNextJoueurToPlay(); //reset au joueur qui vient de jouer car sinon ça va sur le suivant
-            }
 
+                while (!coupProcess(IJoueurs[indiceJoueur].jouer(tas))) {
+                    this.ihm.coupInvalideNotif();
+                }
         }
 
-        System.out.println("Le gagnant est : " + dernierJoueurAyantJoue.getNom());
+        this.ihm.printGagnant(IJoueurs[indiceJoueur]);
+        IJoueurs[indiceJoueur].incrementePartieGagne();
+
+        if (this.ihm.rejouer()) {
+            this.tas = this.ihm.demandeNbTas();
+            this.jouer();
+        }
     }
 
-    public String getNextJoueurToPlay() {
-        String retour = this.dernierJoueurAyantJoue.equals(j2) ? j1.getNom() : j2.getNom() ;
-        this.dernierJoueurAyantJoue = this.dernierJoueurAyantJoue.equals(j2) ? j1 : j2;
-        return retour;
-    }
 
-    public boolean coupProcess(Coup coup){
+    public boolean coupProcess(Coup coup) {
         boolean validite = false;
 
-        if(this.tas.existTas(coup.getTas()) && this.tas.getAllumetteSurLigne(coup.getTas()-1) >= coup.getNballumette() && coup.getNballumette() > 0 && coup.getNballumette() <= 3){
+        if (this.tas.existTas(coup.getTas()) && this.tas.getAllumetteSurLigne(coup.getTas() - 1) >= coup.getNballumette() && coup.getNballumette() > 0 && coup.getNballumette() <= 3) {
             validite = true;
-            this.tas.enleverAllumette(coup.getTas(),  coup.getNballumette());
+            this.tas.enleverAllumette(coup.getTas(), coup.getNballumette());
+            this.ihm.printCoup(coup, IJoueurs[indiceJoueur].getNom());
         }
-
         return validite;
     }
 

@@ -13,10 +13,10 @@ public class Coup {
     public int getTas() {
         return tas;
     }
-    public void setTas(int tas) {this.tas = tas;}
 
-    public int getNballumette() {return nballumette;}
-
+    public int getNballumette() {
+        return nballumette;
+    }
 
 
 }

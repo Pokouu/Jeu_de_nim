@@ -9,7 +9,7 @@ public class JeuNim {
     public static void main(String[] args) {
 
         Ihm ihm = new Ihm();
-        ControleurJeu controleurJeu=new ControleurJeu(ihm);
+        ControleurJeu controleurJeu = new ControleurJeu(ihm);
         controleurJeu.jouer();
     }
 }
